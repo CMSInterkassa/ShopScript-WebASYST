@@ -5,7 +5,7 @@ return array(
     'icon'        => 'img/interkassa16.png',
     'logo'        => 'img/interkassa.png',
     'vendor'      => 'webasyst',
-    'version'     => '1.0.1',
+    'version'     => '1.1',
     'locale'      => array('ru_RU',),
     'type'        => waPayment::TYPE_ONLINE,
 );
