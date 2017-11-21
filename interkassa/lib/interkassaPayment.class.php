@@ -114,9 +114,10 @@ class interkassaPayment extends waPayment
     protected function callbackHandler($request)
     {
         if(isset($request['paysys'])) {
-
-            if (isset($request['ik_act']) && $request['ik_act'] == 'process')
+            if (isset($request['ik_act']) && $request['ik_act'] == 'process'){
+                $request['ik_sign'] = self::IkSignFormation($request, $this -> secret_key);
                 $data = self::getAnswerFromAPI($request);
+            }
             else
                 $data = self::IkSignFormation($request, $this -> secret_key);
 
