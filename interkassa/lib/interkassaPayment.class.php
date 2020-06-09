@@ -401,10 +401,11 @@ class interkassaPayment extends waPayment
     public function checkIP(){
         $ip_stack = array(
             'ip_begin'=>'151.80.190.97',
-            'ip_end'=>'151.80.190.104'
+            'ip_end'=>'35.233.69.55'
         );
 
-        $ip = ip2long($_SERVER['REMOTE_ADDR'])? ip2long($_SERVER['REMOTE_ADDR']) : !ip2long($_SERVER['REMOTE_ADDR']);
+        $ip = !empty($_SERVER['HTTP_CF_CONNECTING_IP'])? $_SERVER['HTTP_CF_CONNECTING_IP'] : $_SERVER['REMOTE_ADDR'];
+        $ip = ip2long($ip) ? ip2long($ip) : !ip2long($ip);
 
         if(($ip >= ip2long($ip_stack['ip_begin'])) && ($ip <= ip2long($ip_stack['ip_end']))){
             return true;
