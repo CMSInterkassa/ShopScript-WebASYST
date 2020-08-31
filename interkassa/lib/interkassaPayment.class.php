@@ -74,10 +74,6 @@ class interkassaPayment extends waPayment
         $FormData['wa_app_id'] = $this->app_id;
         $FormData['wa_merchant_id'] = $this->merchant_id;
 
-        $_SESSION['SCI_INTERKASSA']['wa_id'] = $this->id;
-        $_SESSION['SCI_INTERKASSA']['wa_app_id'] = $this->app_id;
-        $_SESSION['SCI_INTERKASSA']['wa_merchant_id'] = $this->merchant_id;
-
         $view = wa()->getView();
         $view->assign('hidden_fields', $FormData);
         $view->assign('url_request', $this->getRelayUrl() . '?paysys');
@@ -90,10 +86,8 @@ class interkassaPayment extends waPayment
 
     protected function callbackInit($request)
     {
-        $SCI_INTERKASSA = wa()->getStorage()->read('SCI_INTERKASSA');
-
-        $wa_app_id = !empty($request['wa_app_id'])? $request['wa_app_id'] : $SCI_INTERKASSA['wa_app_id'];
-        $wa_merchant_id = !empty($request['wa_merchant_id'])? $request['wa_merchant_id'] : $SCI_INTERKASSA['wa_merchant_id'];
+        $wa_app_id = !empty($request['wa_app_id'])? $request['wa_app_id'] : null;
+        $wa_merchant_id = !empty($request['wa_merchant_id'])? $request['wa_merchant_id'] : null;
 
         if (!empty($request['ik_pm_no']) && !empty($wa_app_id) && !empty($wa_merchant_id)) {
             $this->app_id = $wa_app_id;
@@ -121,8 +115,6 @@ class interkassaPayment extends waPayment
             exit;
         }
 
-        $URL_redirect = $this->getAdapter()->getBackUrl(waAppPayment::URL_FAIL);
-
         if(!$this -> checkIP()){
             self::log($this->id, array('error' => 'Bad request!!! Wrong ip ' . $_SERVER['REMOTE_ADDR']));
             throw new waPaymentException('Bad request!!!');
@@ -141,20 +133,17 @@ class interkassaPayment extends waPayment
                 case self::STATE_CAPTURED:
                     $transaction_data = $this->saveTransaction($transaction_data, $request);
                     $this->execAppCallback(self::CALLBACK_PAYMENT, $transaction_data);
-                    $URL_redirect = $this->getAdapter()->getBackUrl(waAppPayment::URL_SUCCESS);
+
+					return true;
                     break;
                 default:
                     $transaction_data = $this->saveTransaction($transaction_data, $request);
                     $this->execAppCallback(self::CALLBACK_DECLINE, $transaction_data);
                     break;
             }
-
-            wa()->getStorage()->remove('SCI_INTERKASSA');
         }
 
-        return array(
-            'redirect' => $URL_redirect, //требуемый URL, на который нужно перенаправить покупателя
-        );
+		return false;
     }
 
     protected function formalizeData($transaction_raw_data)
@@ -256,7 +245,7 @@ class interkassaPayment extends waPayment
 
         $transaction_data = array_merge($transaction_data, array(
             'type'        => null,
-            'native_id'   => ifset($transaction_raw_data['ik_trn_id']),
+            'native_id'   => ifset($transaction_raw_data['ik_inv_id']),
             'amount'      => ifset($transaction_raw_data['ik_am']),
             'currency_id' => ifset($transaction_raw_data['ik_cur']),
             'order_id'    => $transaction_raw_data['ik_pm_no'],
@@ -407,7 +396,7 @@ class interkassaPayment extends waPayment
         $ip = !empty($_SERVER['HTTP_CF_CONNECTING_IP'])? $_SERVER['HTTP_CF_CONNECTING_IP'] : $_SERVER['REMOTE_ADDR'];
         $ip = ip2long($ip) ? ip2long($ip) : !ip2long($ip);
 
-        if(($ip >= ip2long($ip_stack['ip_begin'])) && ($ip <= ip2long($ip_stack['ip_end']))){
+        if(($ip == ip2long($ip_stack['ip_begin'])) || ($ip == ip2long($ip_stack['ip_end']))){
             return true;
         }
         return false;
